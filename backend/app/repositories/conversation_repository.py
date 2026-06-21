@@ -70,7 +70,8 @@ class ConversationRepository(BaseRepository[Conversation]):
         result = await self.session.execute(
             select(Conversation)
             .options(selectinload(Conversation.messages))
-            .where(Conversation.id == conversation_id, Conversation.user_id == user_id)
+            .where(Conversation.user_id == user_id)
+            .order_by(Conversation.updated_at.desc())
             .execution_options(populate_existing=True)
         )
-        return result.scalar_one_or_none()
+        return result.scalars().all()
