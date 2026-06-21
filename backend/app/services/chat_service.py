@@ -1,8 +1,8 @@
 """Chat business logic service.
 
 Orchestrates conversation management and message exchange, coordinating
-ConversationRepository, MessageRepository, and AIService. Contains no
-direct database queries or HTTP-specific logic.
+ConversationRepository, MessageRepository, AIService, and the RAG
+pipeline. Contains no direct database queries or HTTP-specific logic.
 """
 
 import uuid
@@ -14,10 +14,12 @@ from app.core.exceptions import ConversationNotFoundException
 from app.core.logging import get_logger
 from app.models.conversation import Conversation
 from app.models.message import Message
+from app.rag.retriever import build_rag_prompt, retrieve_context
 from app.repositories.conversation_repository import ConversationRepository
 from app.repositories.message_repository import MessageRepository
 from app.schemas.chat import ChatMessage, CompletionRequest
 from app.services.ai_service import AIService
+from app.services.vector_service import VectorService
 
 logger = get_logger(__name__)
 
@@ -39,6 +41,7 @@ class ChatService:
         self.conversation_repository = ConversationRepository(session)
         self.message_repository = MessageRepository(session)
         self.ai_service = AIService()
+        self.vector_service = VectorService()
 
     async def create_conversation(
         self, *, user_id: uuid.UUID, title: str = "New Conversation"
@@ -53,7 +56,9 @@ class ChatService:
             The newly created Conversation instance.
         """
         conversation = await self.conversation_repository.create(user_id=user_id, title=title)
-        logger.info("conversation_created", conversation_id=str(conversation.id), user_id=str(user_id))
+        logger.info(
+            "conversation_created", conversation_id=str(conversation.id), user_id=str(user_id)
+        )
         return conversation
 
     async def list_conversations(self, *, user_id: uuid.UUID) -> List[Conversation]:
@@ -71,7 +76,16 @@ class ChatService:
         self, *, conversation_id: uuid.UUID, user_id: uuid.UUID
     ) -> Conversation:
         """Fetch a single conversation with its full message history.
-        ...
+
+        Args:
+            conversation_id: The conversation's id.
+            user_id: The requesting user's id, to enforce ownership.
+
+        Returns:
+            The matching Conversation with messages loaded.
+
+        Raises:
+            ConversationNotFoundException: If not found or not owned by this user.
         """
         conversation = await self.conversation_repository.get_by_id_for_user(
             conversation_id, user_id
@@ -80,7 +94,7 @@ class ChatService:
             raise ConversationNotFoundException(conversation_id=str(conversation_id))
         await self.session.refresh(conversation, attribute_names=["messages"])
         return conversation
-    
+
     async def send_message(
         self, *, conversation_id: uuid.UUID, user_id: uuid.UUID, content: str
     ) -> Message:
@@ -105,7 +119,9 @@ class ChatService:
             conversation_id=conversation.id, role="user", content=content
         )
 
-        history = self._build_history(conversation, new_user_content=content)
+        history = self._build_history(
+            conversation, new_user_content=content, user_id=user_id
+        )
         response = await self.ai_service.generate(CompletionRequest(messages=history))
 
         assistant_message = await self.message_repository.create(
@@ -151,7 +167,9 @@ class ChatService:
         )
         await self.session.commit()
 
-        history = self._build_history(conversation, new_user_content=content)
+        history = self._build_history(
+            conversation, new_user_content=content, user_id=user_id
+        )
         full_response = ""
 
         async for chunk in self.ai_service.stream(CompletionRequest(messages=history)):
@@ -165,21 +183,33 @@ class ChatService:
 
         logger.info("message_streamed", conversation_id=str(conversation.id))
 
-    @staticmethod
-    def _build_history(conversation: Conversation, *, new_user_content: str) -> List[ChatMessage]:
-        """Build the full message history to send to the LLM.
+    def _build_history(
+        self, conversation: Conversation, *, new_user_content: str, user_id: uuid.UUID
+    ) -> List[ChatMessage]:
+        """Build the full message history to send to the LLM, augmented with RAG.
+
+        If the user has relevant uploaded documents, retrieves the most
+        relevant chunks and grounds the final user message in them with
+        citation instructions.
 
         Args:
             conversation: The conversation containing prior messages.
             new_user_content: The newest user message, not yet persisted
                 in conversation.messages at call time.
+            user_id: The owning user's id, to scope document retrieval.
 
         Returns:
             A list of ChatMessage objects, system prompt first, followed
-            by prior history, ending with the new user message.
+            by prior history, ending with the (possibly RAG-augmented)
+            new user message.
         """
         history = [ChatMessage(role="system", content=SYSTEM_PROMPT)]
         for msg in conversation.messages:
             history.append(ChatMessage(role=msg.role, content=msg.content))
-        history.append(ChatMessage(role="user", content=new_user_content))
+
+        context = retrieve_context(
+            query=new_user_content, user_id=user_id, vector_service=self.vector_service
+        )
+        augmented_content = build_rag_prompt(query=new_user_content, context=context)
+        history.append(ChatMessage(role="user", content=augmented_content))
         return history
