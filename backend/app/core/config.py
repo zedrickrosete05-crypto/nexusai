@@ -46,7 +46,8 @@ class Settings(BaseSettings):
     CHROMA_COLLECTION: str = "nexusai_docs"
 
     # === AI / LLM ===
-    OPENAI_API_KEY: str
+    AI_PROVIDER: str = "ollama"
+    OPENAI_API_KEY: str = ""
     OPENAI_MODEL: str = "gpt-4o-mini"
     OPENAI_EMBEDDING_MODEL: str = "text-embedding-3-small"
 

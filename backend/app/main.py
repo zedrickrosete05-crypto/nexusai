@@ -15,6 +15,7 @@ from app.core.config import settings
 from app.core.exceptions import NexusAIException
 from app.core.logging import configure_logging, get_logger
 from app.db.session import check_db_connection
+from app.api.v1.router import api_router
 
 logger = get_logger(__name__)
 
@@ -53,6 +54,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(api_router, prefix=settings.API_V1_PREFIX)
 
 @app.exception_handler(NexusAIException)
 async def nexusai_exception_handler(request: Request, exc: NexusAIException) -> JSONResponse:
