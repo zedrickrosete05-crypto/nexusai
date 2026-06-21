@@ -40,8 +40,3 @@ class UserResponse(UserBase):
     is_active: bool
     is_verified: bool
     created_at: datetime
-
-    class Config:
-        """Pydantic config allowing creation directly from ORM objects."""
-
-        pass
