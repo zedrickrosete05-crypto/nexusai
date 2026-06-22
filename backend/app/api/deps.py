@@ -38,7 +38,7 @@ async def get_current_user(
         TokenInvalidException: If the access token is malformed.
         UserNotFoundException: If the user no longer exists.
     """
-    user_id = decode_token(token, expected_type="access")
+    user_id = decode_token(credentials.credentials, expected_type="access")
 
     repository = UserRepository(db)
     user = await repository.get_by_id(uuid.UUID(user_id))
