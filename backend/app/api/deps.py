@@ -7,7 +7,7 @@ authenticated user from a bearer token.
 import uuid
 
 from fastapi import Depends
-from fastapi.security import OAuth2PasswordBearer
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import UserNotFoundException
@@ -16,17 +16,18 @@ from app.db.session import get_db
 from app.models.user import User
 from app.repositories.user_repository import UserRepository
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
+oauth2_scheme = HTTPBearer()
 
 
 async def get_current_user(
-    token: str = Depends(oauth2_scheme),
+    credentials: HTTPAuthorizationCredentials = Depends(oauth2_scheme),
     db: AsyncSession = Depends(get_db),
 ) -> User:
     """Resolve the currently authenticated user from a bearer access token.
 
     Args:
-        token: The bearer access token extracted from the Authorization header.
+        credentials: The bearer token credentials extracted from the
+            Authorization header.
         db: Injected async database session.
 
     Returns:
