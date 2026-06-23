@@ -20,6 +20,7 @@ from app.repositories.message_repository import MessageRepository
 from app.schemas.chat import ChatMessage, CompletionRequest
 from app.services.ai_service import AIService
 from app.services.vector_service import VectorService
+from app.agents.graph import agent_graph
 
 logger = get_logger(__name__)
 
@@ -135,6 +136,58 @@ class ChatService:
             "message_exchanged",
             conversation_id=str(conversation.id),
             total_tokens=response.total_tokens,
+        )
+        return assistant_message
+    
+    async def send_agent_message(
+        self, *, conversation_id: uuid.UUID, user_id: uuid.UUID, content: str
+    ) -> Message:
+        """Send a user message and route it through the full agent graph.
+
+        Unlike send_message(), this runs the query through the Router,
+        a specialist agent, and the Critic's revision loop before
+        persisting the final answer.
+
+        Args:
+            conversation_id: The conversation to send the message in.
+            user_id: The requesting user's id, to enforce ownership.
+            content: The user's message text.
+
+        Returns:
+            The newly created assistant Message instance.
+
+        Raises:
+            ConversationNotFoundException: If not found or not owned by this user.
+        """
+        conversation = await self.get_conversation(
+            conversation_id=conversation_id, user_id=user_id
+        )
+
+        await self.message_repository.create(
+            conversation_id=conversation.id, role="user", content=content
+        )
+
+        initial_state = {
+            "user_query": content,
+            "route": None,
+            "draft_response": None,
+            "critic_feedback": None,
+            "needs_revision": False,
+            "final_response": None,
+            "revision_count": 0,
+        }
+        result = await agent_graph.ainvoke(initial_state)
+        final_text = result["final_response"] or "I wasn't able to generate a response."
+
+        assistant_message = await self.message_repository.create(
+            conversation_id=conversation.id, role="assistant", content=final_text
+        )
+
+        logger.info(
+            "agent_message_exchanged",
+            conversation_id=str(conversation.id),
+            route=result["route"],
+            revisions=result["revision_count"],
         )
         return assistant_message
 
