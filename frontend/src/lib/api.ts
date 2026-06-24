@@ -16,7 +16,6 @@ export const apiClient: AxiosInstance = axios.create({
   },
 });
 
-// Attach the access token to every outgoing request, if present.
 apiClient.interceptors.request.use((config) => {
   const token = typeof window !== "undefined" ? localStorage.getItem("access_token") : null;
   if (token) {
@@ -24,6 +23,31 @@ apiClient.interceptors.request.use((config) => {
   }
   return config;
 });
+
+let isRedirecting = false;
+
+apiClient.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    const status = error.response?.status;
+    const url = error.config?.url || "";
+
+    // Don't trigger redirect logic for the login/register endpoints themselves —
+    // a 401 there just means wrong credentials, not an expired session.
+    const isAuthEndpoint = url.includes("/auth/login") || url.includes("/auth/register");
+
+    if (status === 401 && !isAuthEndpoint && !isRedirecting) {
+      isRedirecting = true;
+      localStorage.removeItem("access_token");
+      localStorage.removeItem("refresh_token");
+      if (typeof window !== "undefined") {
+        window.location.href = "/login";
+      }
+    }
+
+    return Promise.reject(error);
+  }
+);
 
 // === Types ===
 

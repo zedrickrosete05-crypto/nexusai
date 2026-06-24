@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { Send, Plus, MessageSquare, Bot } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { CodeBlock } from "@/components/chat/CodeBlock";
+import "highlight.js/styles/github-dark.css";
 import { useAuthStore } from "@/store/authStore";
 import { useChatStore } from "@/store/chatStore";
 
@@ -118,7 +120,35 @@ export default function ChatPage() {
                     }`}
                   >
                     <div className="prose prose-invert prose-sm max-w-none">
-                      <ReactMarkdown remarkPlugins={[remarkGfm]}>{m.content}</ReactMarkdown>
+                      <ReactMarkdown
+                        remarkPlugins={[remarkGfm]}
+                        components={{
+                          code(props) {
+                            const { className, children, ...rest } = props;
+                            const match = /language-(\w+)/.exec(className || "");
+                            const isInline = !match;
+
+                            if (isInline) {
+                              return (
+                                <code
+                                  className="rounded bg-neutral-700 px-1 py-0.5 text-sm"
+                                  {...rest}
+                                >
+                                  {children}
+                                </code>
+                              );
+                            }
+
+                            return (
+                              <CodeBlock language={match[1]}>
+                                {String(children).replace(/\n$/, "")}
+                              </CodeBlock>
+                            );
+                          },
+                        }}
+                      >
+                        {m.content}
+                      </ReactMarkdown>
                     </div>
                   </div>
                 </div>
