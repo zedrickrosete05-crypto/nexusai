@@ -25,6 +25,7 @@ class AgentState(TypedDict):
 
     user_query: str
     route: Optional[AgentRoute]
+    rag_context: Optional[str]
     draft_response: Optional[str]
     critic_feedback: Optional[str]
     needs_revision: bool

@@ -20,7 +20,7 @@ from app.repositories.message_repository import MessageRepository
 from app.schemas.chat import ChatMessage, CompletionRequest
 from app.services.ai_service import AIService
 from app.services.vector_service import VectorService
-from app.agents.graph import agent_graph
+from app.agents.graph import build_agent_graph
 
 logger = get_logger(__name__)
 
@@ -170,12 +170,14 @@ class ChatService:
         initial_state = {
             "user_query": content,
             "route": None,
+            "rag_context": None,
             "draft_response": None,
             "critic_feedback": None,
             "needs_revision": False,
             "final_response": None,
             "revision_count": 0,
         }
+        agent_graph = await build_agent_graph(user_id)
         result = await agent_graph.ainvoke(initial_state)
         final_text = result["final_response"] or "I wasn't able to generate a response."
 

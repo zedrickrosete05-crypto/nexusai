@@ -13,29 +13,19 @@ from app.services.vector_service import VectorService
 
 logger = get_logger(__name__)
 
-MAX_RELEVANT_DISTANCE = 1.5
+MAX_RELEVANT_DISTANCE = 2.0
 
 
 def retrieve_context(
     *, query: str, user_id: uuid.UUID, vector_service: VectorService, top_k: int = 5
 ) -> str:
-    """Retrieve relevant document chunks and format them as cited context.
-
-    Args:
-        query: The user's question or search query.
-        user_id: Restricts retrieval to documents owned by this user.
-        vector_service: The VectorService instance to query.
-        top_k: Maximum number of chunks to retrieve before filtering.
-
-    Returns:
-        A formatted string of relevant chunks with source citations,
-        ready to inject into an LLM prompt. Empty string if no
-        sufficiently relevant chunks are found.
-    """
+    """Retrieve relevant document chunks and format them as cited context."""
     query_embedding = embed_query(query)
     matches = vector_service.query(
         query_embedding=query_embedding, user_id=user_id, top_k=top_k
     )
+
+    logger.info("retrieval_distances", distances=[round(m["distance"], 3) for m in matches])
 
     relevant = [m for m in matches if m["distance"] <= MAX_RELEVANT_DISTANCE]
 
@@ -52,24 +42,17 @@ def retrieve_context(
 
 
 def build_rag_prompt(*, query: str, context: str) -> str:
-    """Combine retrieved context and the user's query into a grounded prompt.
-
-    Args:
-        query: The user's original question.
-        context: The formatted, cited context from retrieve_context().
-
-    Returns:
-        A prompt instructing the LLM to answer using the provided
-        sources and cite them, or the original query unchanged if
-        no context was retrieved.
-    """
+    """Combine retrieved context and the user's query into a grounded prompt."""
     if not context:
         return query
 
     return (
-        "Answer the question using the sources below. Cite sources using "
-        "their [Source N] label when you use information from them. If the "
-        "sources don't contain the answer, say so.\n\n"
+        "You have been given direct access to the following source content. "
+        "Treat it as already-provided information you CAN see and use — do not "
+        "claim you lack access to files or attachments. Answer the question "
+        "using ONLY the sources below, and cite them using their [Source N] "
+        "label. If the sources genuinely don't contain the answer, say so "
+        "plainly without disclaimers about file access.\n\n"
         f"{context}\n\n"
         f"Question: {query}"
     )

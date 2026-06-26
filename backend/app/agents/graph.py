@@ -1,15 +1,19 @@
 """LangGraph state machine wiring all agents into a complete workflow.
 
-Defines the graph structure: Router dispatches to a specialist agent,
-the Critic reviews the draft, optionally looping through Revision,
-before Final Response finalizes the answer.
+Defines the graph structure: a RAG retrieval node fetches relevant
+document context, the Router dispatches to a specialist agent, the
+Critic reviews the draft, optionally looping through Revision, before
+Final Response finalizes the answer.
 """
+
+import uuid
 
 from langgraph.graph import END, StateGraph
 
 from app.agents.coding_agent import coding_node
 from app.agents.critic_agent import critic_node
 from app.agents.final_response_agent import final_response_node
+from app.agents.rag_node import make_rag_retrieval_node
 from app.agents.research_agent import research_node
 from app.agents.revision_node import revision_node
 from app.agents.router_agent import router_node
@@ -22,38 +26,34 @@ logger = get_logger(__name__)
 
 
 def _select_specialist(state: AgentState) -> str:
-    """Choose which specialist node to run based on the router's decision.
-
-    Args:
-        state: The current agent state, with "route" already set.
-
-    Returns:
-        The name of the specialist node to route to next.
-    """
+    """Choose which specialist node to run based on the router's decision."""
     return state["route"] or "research"
 
 
 def _after_critic(state: AgentState) -> str:
-    """Decide whether to revise the draft or finalize it.
-
-    Args:
-        state: The current agent state, with critic results set.
-
-    Returns:
-        "revision" if the draft needs rework, otherwise "final_response".
-    """
+    """Decide whether to revise the draft or finalize it."""
     return "revision" if state["needs_revision"] else "final_response"
 
 
-def build_agent_graph():
-    """Construct and compile the full LangGraph agent workflow.
+async def build_agent_graph(user_id: uuid.UUID):
+    """Construct and compile the agent workflow for a specific user.
+
+    The graph is rebuilt per request (cheap) so the RAG retrieval node
+    can be scoped to the requesting user's documents.
+
+    Args:
+        user_id: The user whose documents should be searched during
+            RAG retrieval.
 
     Returns:
         A compiled LangGraph graph, ready to be invoked with an
         initial AgentState.
     """
+    rag_retrieval_node = await make_rag_retrieval_node(user_id)
+
     graph = StateGraph(AgentState)
 
+    graph.add_node("rag_retrieval", rag_retrieval_node)
     graph.add_node("router", router_node)
     graph.add_node("research", research_node)
     graph.add_node("coding", coding_node)
@@ -63,7 +63,8 @@ def build_agent_graph():
     graph.add_node("revision", revision_node)
     graph.add_node("final_response", final_response_node)
 
-    graph.set_entry_point("router")
+    graph.set_entry_point("rag_retrieval")
+    graph.add_edge("rag_retrieval", "router")
 
     graph.add_conditional_edges(
         "router",
@@ -89,8 +90,5 @@ def build_agent_graph():
     graph.add_edge("final_response", END)
 
     compiled = graph.compile()
-    logger.info("agent_graph_compiled")
+    logger.info("agent_graph_compiled", user_id=str(user_id))
     return compiled
-
-
-agent_graph = build_agent_graph()
