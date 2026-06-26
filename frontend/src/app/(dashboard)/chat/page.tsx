@@ -9,6 +9,8 @@ import { CodeBlock } from "@/components/chat/CodeBlock";
 import "highlight.js/styles/github-dark.css";
 import { useAuthStore } from "@/store/authStore";
 import { useChatStore } from "@/store/chatStore";
+import Link from "next/link";
+import { FileText } from "lucide-react";
 
 /**
  * Main chat dashboard: conversation sidebar, message thread, and input.
@@ -91,7 +93,14 @@ export default function ChatPage() {
           ))}
         </nav>
 
-        <div className="border-t border-neutral-800 p-4">
+        <div className="border-t border-neutral-800 p-4 space-y-1">
+          <Link
+            href="/documents"
+            className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-neutral-400 hover:bg-neutral-800"
+          >
+            <FileText size={14} />
+            Documents
+          </Link>
           <button
             onClick={logout}
             className="w-full rounded-lg px-3 py-2 text-left text-sm text-neutral-400 hover:bg-neutral-800"

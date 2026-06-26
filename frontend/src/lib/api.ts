@@ -11,6 +11,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
 
 export const apiClient: AxiosInstance = axios.create({
   baseURL: `${API_URL}/api/v1`,
+  timeout: 60000, // default 60s for normal requests
   headers: {
     "Content-Type": "application/json",
   },
@@ -147,7 +148,8 @@ export async function sendAgentMessage(
 ): Promise<Message> {
   const { data } = await apiClient.post<Message>(
     `/chat/conversations/${conversationId}/agent-messages`,
-    { content }
+    { content },
+    { timeout: 180000 } // 3 minutes — agent pipeline involves multiple sequential LLM calls
   );
   return data;
 }
