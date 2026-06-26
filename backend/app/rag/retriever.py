@@ -47,12 +47,13 @@ def build_rag_prompt(*, query: str, context: str) -> str:
         return query
 
     return (
-        "You have been given direct access to the following source content. "
-        "Treat it as already-provided information you CAN see and use — do not "
-        "claim you lack access to files or attachments. Answer the question "
-        "using ONLY the sources below, and cite them using their [Source N] "
-        "label. If the sources genuinely don't contain the answer, say so "
-        "plainly without disclaimers about file access.\n\n"
+        "The following numbered sources are excerpts from a document the user "
+        "has uploaded and that you can directly read below. This is NOT public "
+        "information — it is private content provided to you for this question. "
+        "Answer using these sources, citing [Source N]. Do not say you lack "
+        "access, cannot view files, or that information is 'publicly available' "
+        "— the text below IS the file's content, already given to you.\n\n"
         f"{context}\n\n"
-        f"Question: {query}"
+        f"Question: {query}\n\n"
+        "Answer directly using the sources above:"
     )
