@@ -173,3 +173,16 @@ export async function listDocuments(): Promise<DocumentMeta[]> {
 export async function deleteDocument(documentId: string): Promise<void> {
   await apiClient.delete(`/documents/${documentId}`);
 }
+// === Dashboard ===
+
+export interface DashboardStats {
+  conversation_count: number;
+  message_count: number;
+  assistant_message_count: number;
+  document_count: number;
+}
+
+export async function getDashboardStats(): Promise<DashboardStats> {
+  const { data } = await apiClient.get<DashboardStats>("/dashboard/stats");
+  return data;
+}
