@@ -20,6 +20,7 @@ import { FileText } from "lucide-react";
 export default function ChatPage() {
   const router = useRouter();
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const isInitialized = useAuthStore((state) => state.isInitialized);
   const logout = useAuthStore((state) => state.logout);
 
   const {
@@ -37,13 +38,13 @@ export default function ChatPage() {
   const [useAgent, setUseAgent] = useState(false);
 
   useEffect(() => {
+    if (!isInitialized) return;
     if (!isAuthenticated) {
       router.push("/login");
       return;
     }
     loadConversations();
-  }, [isAuthenticated, router, loadConversations]);
-
+  }, [isInitialized, isAuthenticated, router, loadConversations]);
   async function handleNewConversation() {
     await startNewConversation();
   }
@@ -60,7 +61,7 @@ export default function ChatPage() {
     await send(content, useAgent);
   }
 
-  if (!isAuthenticated) return null;
+  if (!isInitialized || !isAuthenticated) return null;
 
   return (
     <div className="flex h-screen bg-neutral-950 text-white">

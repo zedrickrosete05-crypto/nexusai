@@ -22,6 +22,7 @@ const STATUS_STYLES: Record<string, string> = {
 export default function DocumentsPage() {
   const router = useRouter();
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const isInitialized = useAuthStore((state) => state.isInitialized);
   const { documents, isLoading, isUploading, error, loadDocuments, upload, remove } =
     useDocumentStore();
 
@@ -29,12 +30,13 @@ export default function DocumentsPage() {
   const [dragActive, setDragActive] = useState(false);
 
   useEffect(() => {
+    if (!isInitialized) return;
     if (!isAuthenticated) {
       router.push("/login");
       return;
     }
     loadDocuments();
-  }, [isAuthenticated, router, loadDocuments]);
+  }, [isInitialized, isAuthenticated, router, loadDocuments]);
 
   async function handleFileSelect(e: ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -59,7 +61,7 @@ export default function DocumentsPage() {
     }
   }
 
-  if (!isAuthenticated) return null;
+  if (!isInitialized || !isAuthenticated) return null;
 
   return (
     <div className="min-h-screen bg-neutral-950 text-white">

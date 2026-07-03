@@ -12,6 +12,7 @@ interface AuthState {
   user: User | null;
   accessToken: string | null;
   isAuthenticated: boolean;
+  isInitialized: boolean;
   isLoading: boolean;
   error: string | null;
   login: (email: string, password: string) => Promise<void>;
@@ -24,6 +25,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   user: null,
   accessToken: null,
   isAuthenticated: false,
+  isInitialized: false,
   isLoading: false,
   error: null,
 
@@ -72,5 +74,6 @@ export const useAuthStore = create<AuthState>((set) => ({
     if (token) {
       set({ accessToken: token, isAuthenticated: true });
     }
+    set({ isInitialized: true });
   },
 }));
