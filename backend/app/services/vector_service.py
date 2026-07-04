@@ -21,12 +21,8 @@ class VectorService:
 
     def __init__(self) -> None:
         """Initialize the ChromaDB client and target collection."""
-        self._client = chromadb.HttpClient(
-            host=settings.CHROMA_HOST, port=settings.CHROMA_PORT
-        )
-        self._collection = self._client.get_or_create_collection(
-            name=settings.CHROMA_COLLECTION
-        )
+        self._client = chromadb.HttpClient(host=settings.CHROMA_HOST, port=settings.CHROMA_PORT)
+        self._collection = self._client.get_or_create_collection(name=settings.CHROMA_COLLECTION)
 
     def add_chunks(
         self,

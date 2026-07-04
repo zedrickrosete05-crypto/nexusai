@@ -12,6 +12,7 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
+from backend.app.models.conversation import Conversation
 
 
 class Message(Base):
@@ -29,9 +30,7 @@ class Message(Base):
 
     __tablename__ = "messages"
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
-    )
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     conversation_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("conversations.id", ondelete="CASCADE"),
@@ -45,7 +44,7 @@ class Message(Base):
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
 
-    conversation: Mapped["Conversation"] = relationship("Conversation", back_populates="messages")
+    conversation: Mapped["Conversation"] = relationship("Conversation", back_populates="messages")  # noqa: F821
 
     def __repr__(self) -> str:
         """Return a developer-friendly string representation.

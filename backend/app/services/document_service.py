@@ -68,9 +68,7 @@ class DocumentService:
             )
             await self.session.commit()
 
-            logger.info(
-                "document_processed", document_id=str(document.id), chunk_count=len(chunks)
-            )
+            logger.info("document_processed", document_id=str(document.id), chunk_count=len(chunks))
         except Exception as exc:
             await self.document_repository.update_status(document=document, status="failed")
             await self.session.commit()

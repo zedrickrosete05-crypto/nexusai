@@ -24,9 +24,7 @@ from app.agents.graph import build_agent_graph
 
 logger = get_logger(__name__)
 
-SYSTEM_PROMPT = (
-    "You are NexusAI, a helpful and concise AI research and coding assistant."
-)
+SYSTEM_PROMPT = "You are NexusAI, a helpful and concise AI research and coding assistant."
 
 
 class ChatService:
@@ -112,17 +110,13 @@ class ChatService:
         Raises:
             ConversationNotFoundException: If not found or not owned by this user.
         """
-        conversation = await self.get_conversation(
-            conversation_id=conversation_id, user_id=user_id
-        )
+        conversation = await self.get_conversation(conversation_id=conversation_id, user_id=user_id)
 
         await self.message_repository.create(
             conversation_id=conversation.id, role="user", content=content
         )
 
-        history = self._build_history(
-            conversation, new_user_content=content, user_id=user_id
-        )
+        history = self._build_history(conversation, new_user_content=content, user_id=user_id)
         response = await self.ai_service.generate(CompletionRequest(messages=history))
 
         assistant_message = await self.message_repository.create(
@@ -138,7 +132,7 @@ class ChatService:
             total_tokens=response.total_tokens,
         )
         return assistant_message
-    
+
     async def send_agent_message(
         self, *, conversation_id: uuid.UUID, user_id: uuid.UUID, content: str
     ) -> Message:
@@ -159,9 +153,7 @@ class ChatService:
         Raises:
             ConversationNotFoundException: If not found or not owned by this user.
         """
-        conversation = await self.get_conversation(
-            conversation_id=conversation_id, user_id=user_id
-        )
+        conversation = await self.get_conversation(conversation_id=conversation_id, user_id=user_id)
 
         await self.message_repository.create(
             conversation_id=conversation.id, role="user", content=content
@@ -213,18 +205,14 @@ class ChatService:
         Raises:
             ConversationNotFoundException: If not found or not owned by this user.
         """
-        conversation = await self.get_conversation(
-            conversation_id=conversation_id, user_id=user_id
-        )
+        conversation = await self.get_conversation(conversation_id=conversation_id, user_id=user_id)
 
         await self.message_repository.create(
             conversation_id=conversation.id, role="user", content=content
         )
         await self.session.commit()
 
-        history = self._build_history(
-            conversation, new_user_content=content, user_id=user_id
-        )
+        history = self._build_history(conversation, new_user_content=content, user_id=user_id)
         full_response = ""
 
         async for chunk in self.ai_service.stream(CompletionRequest(messages=history)):

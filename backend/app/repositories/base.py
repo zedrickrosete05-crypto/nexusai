@@ -42,9 +42,7 @@ class BaseRepository(Generic[ModelType]):
         Returns:
             The matching model instance, or None if not found.
         """
-        result = await self.session.execute(
-            select(self.model).where(self.model.id == record_id)
-        )
+        result = await self.session.execute(select(self.model).where(self.model.id == record_id))
         return result.scalar_one_or_none()
 
     async def delete(self, instance: ModelType) -> None:

@@ -4,6 +4,7 @@ Represents a single chat thread belonging to a user, containing
 an ordered collection of messages.
 """
 
+from email.message import Message
 import uuid
 from datetime import datetime
 
@@ -28,9 +29,7 @@ class Conversation(Base):
 
     __tablename__ = "conversations"
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
-    )
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     user_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
     )
@@ -42,8 +41,10 @@ class Conversation(Base):
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False
     )
 
-    messages: Mapped[list["Message"]] = relationship(
-        "Message", back_populates="conversation", cascade="all, delete-orphan",
+    messages: Mapped[list["Message"]] = relationship(  # noqa: F821
+        "Message",
+        back_populates="conversation",
+        cascade="all, delete-orphan",
         order_by="Message.created_at",
     )
 

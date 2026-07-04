@@ -42,20 +42,6 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
     hashed_bytes = hashed_password.encode("utf-8")
     return bcrypt.checkpw(password_bytes, hashed_bytes)
 
-def verify_password(plain_password: str, hashed_password: str) -> bool:
-    """Verify a plaintext password against its bcrypt hash.
-
-    Args:
-        plain_password: The raw password provided at login.
-        hashed_password: The stored hash to compare against.
-
-    Returns:
-        True if the password matches, False otherwise.
-    """
-    password_bytes = plain_password.encode("utf-8")
-    hashed_bytes = hashed_password.encode("utf-8")
-    return bcrypt.checkpw(password_bytes, hashed_bytes)
-
 
 def _create_token(
     subject: str,
@@ -123,9 +109,7 @@ def decode_token(token: str, expected_type: Literal["access", "refresh"]) -> str
             signature, or does not match the expected type.
     """
     try:
-        payload = jwt.decode(
-            token, settings.JWT_SECRET_KEY, algorithms=[settings.JWT_ALGORITHM]
-        )
+        payload = jwt.decode(token, settings.JWT_SECRET_KEY, algorithms=[settings.JWT_ALGORITHM])
     except jwt.ExpiredSignatureError:
         raise TokenExpiredException()
     except JWTError:

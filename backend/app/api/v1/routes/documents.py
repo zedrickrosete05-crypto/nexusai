@@ -8,7 +8,7 @@ DocumentService and the extractor utility.
 import uuid
 from typing import List
 
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
+from fastapi import APIRouter, Depends, File, UploadFile, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_current_user
@@ -27,9 +27,7 @@ MAX_FILE_SIZE_MB = 10
 MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024
 
 
-@router.post(
-    "/upload", response_model=DocumentResponse, status_code=status.HTTP_201_CREATED
-)
+@router.post("/upload", response_model=DocumentResponse, status_code=status.HTTP_201_CREATED)
 async def upload_document(
     file: UploadFile = File(...),
     current_user: User = Depends(get_current_user),

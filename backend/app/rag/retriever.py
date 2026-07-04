@@ -21,9 +21,7 @@ def retrieve_context(
 ) -> str:
     """Retrieve relevant document chunks and format them as cited context."""
     query_embedding = embed_query(query)
-    matches = vector_service.query(
-        query_embedding=query_embedding, user_id=user_id, top_k=top_k
-    )
+    matches = vector_service.query(query_embedding=query_embedding, user_id=user_id, top_k=top_k)
 
     logger.info("retrieval_distances", distances=[round(m["distance"], 3) for m in matches])
 

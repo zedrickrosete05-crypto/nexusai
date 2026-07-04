@@ -97,7 +97,9 @@ class AIService:
         choice = response.choices[0]
         usage = response.usage
         logger.info(
-            "ai_generate_succeeded", provider="openai", model=model,
+            "ai_generate_succeeded",
+            provider="openai",
+            model=model,
             total_tokens=usage.total_tokens if usage else 0,
         )
         return CompletionResponse(
@@ -145,9 +147,7 @@ class AIService:
         }
         try:
             async with httpx.AsyncClient(timeout=120.0) as client:
-                response = await client.post(
-                    f"{self._ollama_base_url}/api/chat", json=payload
-                )
+                response = await client.post(f"{self._ollama_base_url}/api/chat", json=payload)
                 response.raise_for_status()
                 data = response.json()
         except Exception as exc:

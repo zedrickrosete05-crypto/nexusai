@@ -56,6 +56,7 @@ app.add_middleware(
 
 app.include_router(api_router, prefix=settings.API_V1_PREFIX)
 
+
 @app.exception_handler(NexusAIException)
 async def nexusai_exception_handler(request: Request, exc: NexusAIException) -> JSONResponse:
     """Convert any NexusAIException into a consistent JSON error response.

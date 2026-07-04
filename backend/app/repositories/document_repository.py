@@ -87,8 +87,6 @@ class DocumentRepository(BaseRepository[Document]):
             A list of the user's Document instances.
         """
         result = await self.session.execute(
-            select(Document)
-            .where(Document.user_id == user_id)
-            .order_by(Document.created_at.desc())
+            select(Document).where(Document.user_id == user_id).order_by(Document.created_at.desc())
         )
         return list(result.scalars().all())

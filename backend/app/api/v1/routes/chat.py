@@ -113,9 +113,9 @@ async def send_message(
         conversation_id=conversation_id, user_id=current_user.id, content=payload.content
     )
     return MessageResponse.model_validate(assistant_message)
-@router.post(
-    "/conversations/{conversation_id}/agent-messages", response_model=MessageResponse
-)
+
+
+@router.post("/conversations/{conversation_id}/agent-messages", response_model=MessageResponse)
 async def send_agent_message(
     conversation_id: uuid.UUID,
     payload: SendMessageRequest,

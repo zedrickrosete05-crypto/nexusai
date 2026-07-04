@@ -40,9 +40,7 @@ def extract_text(*, file_bytes: bytes, file_type: str) -> str:
     if file_type == "txt":
         return _extract_txt(file_bytes)
 
-    raise InvalidFileTypeException(
-        file_type=file_type, allowed_types=sorted(SUPPORTED_FILE_TYPES)
-    )
+    raise InvalidFileTypeException(file_type=file_type, allowed_types=sorted(SUPPORTED_FILE_TYPES))
 
 
 def _extract_pdf(file_bytes: bytes) -> str:

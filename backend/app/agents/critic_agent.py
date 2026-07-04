@@ -43,8 +43,7 @@ async def critic_node(state: AgentState) -> AgentState:
 
     ai_service = AIService()
     review_input = (
-        f"User question: {state['user_query']}\n\n"
-        f"Draft answer: {state['draft_response']}"
+        f"User question: {state['user_query']}\n\nDraft answer: {state['draft_response']}"
     )
     request = CompletionRequest(
         messages=[
